@@ -1,4 +1,4 @@
-name: Sync upstream
+name: Sync modules and YouTube scripts
 
 on:
   schedule:
@@ -21,17 +21,41 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-      - name: Merge upstream changes safely
+      - name: Sync modules and scripts
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add upstream https://github.com/IBL3ND/module.git
-          git fetch upstream main
-          if git merge-base --is-ancestor upstream/main HEAD; then
-            echo "Already up to date."
-            exit 0
+          git remote add upstream-module https://github.com/IBL3ND/module.git
+          git fetch upstream-module main
+          # Prefer upstream module edits on conflicts, then restore our script URLs.
+          git merge --no-edit -X theirs upstream-module/main
+          mkdir -p js
+          for script in youtube-request.js youtube-response.js YT-CC-ASR-Auto.js; do
+            curl --fail --location --silent --show-error --retry 3 \
+              "https://raw.githubusercontent.com/IBL3ND/js/main/${script}" \
+              -o "js/${script}.tmp"
+            test -s "js/${script}.tmp"
+            mv "js/${script}.tmp" "js/${script}"
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("Egern-YouTube.yaml")
+          text = p.read_text(encoding="utf-8")
+          text = text.replace(
+              "https://raw.githubusercontent.com/IBL3ND/js/refs/heads/main/",
+              "https://raw.githubusercontent.com/lkdd20/module/main/js/"
+          ).replace(
+              "https://raw.githubusercontent.com/IBL3ND/js/main/",
+              "https://raw.githubusercontent.com/lkdd20/module/main/js/"
+          )
+          p.write_text(text, encoding="utf-8")
+          PY
+          git add Egern-YouTube.yaml js/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync YouTube scripts and local module URLs"
           fi
-          git merge --no-edit upstream/main
-          git push origin HEAD:main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            git push origin HEAD:main
+          fi
