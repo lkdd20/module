@@ -1,4 +1,4 @@
-name: Sync modules and YouTube scripts
+name: Sync upstream modules and all JS files
 
 on:
   schedule:
@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-      - name: Sync modules and scripts
+      - name: Sync modules and complete JS repository
         shell: bash
         run: |
           set -euo pipefail
@@ -29,16 +29,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add upstream-module https://github.com/IBL3ND/module.git
           git fetch upstream-module main
-          # Prefer upstream module edits on conflicts, then restore our script URLs.
           git merge --no-edit -X theirs upstream-module/main
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+          git clone --depth 1 --branch main https://github.com/IBL3ND/js.git "$tmpdir/upstream-js"
           mkdir -p js
-          for script in youtube-request.js youtube-response.js YT-CC-ASR-Auto.js; do
-            curl --fail --location --silent --show-error --retry 3 \
-              "https://raw.githubusercontent.com/IBL3ND/js/main/${script}" \
-              -o "js/${script}.tmp"
-            test -s "js/${script}.tmp"
-            mv "js/${script}.tmp" "js/${script}"
-          done
+          rsync -a --delete --exclude='.git/' "$tmpdir/upstream-js/" js/
           python3 - <<'PY'
           from pathlib import Path
           p = Path("Egern-YouTube.yaml")
@@ -52,9 +48,9 @@ jobs:
           )
           p.write_text(text, encoding="utf-8")
           PY
-          git add Egern-YouTube.yaml js/
+          git add -A js Egern-YouTube.yaml
           if ! git diff --cached --quiet; then
-            git commit -m "chore: sync YouTube scripts and local module URLs"
+            git commit -m "chore: mirror all upstream JS files and localize module URLs"
           fi
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
             git push origin HEAD:main
