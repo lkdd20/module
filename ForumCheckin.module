@@ -1,13 +1,13 @@
 name: "NS + DF 双账号签到"
-description: "v1.0.1：修复手动运行时账号被误判停用；一个模块管理 NS 两账号和 DF 两账号"
+description: "v1.0.2：自动读取本地 Cookie，合并签到 NS 两账号和 DF 两账号，无需账号启用开关"
 icon: "person.2.fill"
 compat_arguments:
   MINUTE: "15"
   HOUR: "10"
 compat_arguments_desc: |
   MINUTE/HOUR：每日签到时间，默认 10:15（设备本地时间）
-  Cookie 捕获、鸡腿模式、账号启停请在模块环境变量设置中修改。
-  四个账号默认启用；未获取 Cookie 的账号会跳过。
+  Cookie 捕获、鸡腿模式请在模块环境变量设置中修改。
+  自动尝试四个账号；未获取 Cookie 的账号会跳过，不使用账号启用开关。
 env_schema:
   CAPTURE_TARGET:
     name: Cookie 捕获账号
@@ -18,22 +18,6 @@ env_schema:
     name: 固定鸡腿（关闭为随机）
     default_value: "false"
     options: ["false", "true"]
-  ENABLE_NS1:
-    name: 启用 NS 账号1
-    default_value: "true"
-    options: ["true", "false"]
-  ENABLE_NS2:
-    name: 启用 NS 账号2
-    default_value: "true"
-    options: ["true", "false"]
-  ENABLE_DF1:
-    name: 启用 DF 账号1
-    default_value: "true"
-    options: ["true", "false"]
-  ENABLE_DF2:
-    name: 启用 DF 账号2
-    default_value: "true"
-    options: ["true", "false"]
 mitm:
   hostnames:
     - www.nodeseek.com
@@ -42,7 +26,7 @@ scriptings:
   - http_response:
       name: 论坛合并签到－NS Cookie
       match: '^https://www\.nodeseek\.com/api/account/getInfo(?:/|\?|$)'
-      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js?v=1.0.1
+      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js?v=1.0.2
       body_required: false
       timeout: 30
       env:
@@ -50,7 +34,7 @@ scriptings:
   - http_response:
       name: 论坛合并签到－DF Cookie
       match: '^https://www\.deepflood\.com/api/account/getInfo(?:/|\?|$)'
-      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js?v=1.0.1
+      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js?v=1.0.2
       body_required: false
       timeout: 30
       env:
@@ -59,11 +43,7 @@ scriptings:
       name: 论坛合并签到－四账号
       cron: "{{{MINUTE}}} {{{HOUR}}} * * *"
       timeout: 90
-      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js?v=1.0.1
+      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js?v=1.0.2
       env:
         MODE: checkin
         FIXED_LEGS: "false"
-        ENABLE_NS1: "true"
-        ENABLE_NS2: "true"
-        ENABLE_DF1: "true"
-        ENABLE_DF2: "true"

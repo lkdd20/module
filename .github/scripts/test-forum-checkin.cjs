@@ -64,10 +64,10 @@ async function sign(env = {}, responder = () => ({status: 200, text: async () =>
   summary = await sign({ENABLE_NS1: 'null', ENABLE_NS2: 'undefined', ENABLE_DF1: '  ', ENABLE_DF2: null});
   assert.equal(requests.length, 4, 'missing or unrecognized defaults remain enabled');
   summary = await sign({ENABLE_NS1: false, ENABLE_NS2: 'false', ENABLE_DF1: '0', ENABLE_DF2: 'off'});
-  assert.equal(requests.length, 0, 'explicit off settings must still be honored');
-  assert(summary.includes('所有账号均已停用'));
+  assert.equal(requests.length, 4, 'legacy persisted off settings must not prevent saved-cookie accounts from running');
+  assert(!summary.includes('所有账号均已停用'));
   await sign({FIXED_LEGS: 'true', ENABLE_NS2: 'false', ENABLE_DF2: 'false'});
-  assert.equal(requests.length, 2);
+  assert.equal(requests.length, 4);
   assert(requests.every(r => r.url.endsWith('random=false')));
   summary = await sign({}, i => i === 1 ? {status: 403}
     : i === 2 ? {status: 200, text: async () => '<html>Just a moment</html>'}

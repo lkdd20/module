@@ -3,7 +3,7 @@
  * DeepFlood endpoint reference: https://github.com/agluo/ql-script-hub/blob/master/deepflood_checkin.py
  * Credentials stay in Egern local storage; no password, cookie, or token is uploaded.
  */
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const SITES = {
   NS: {origin: 'https://www.nodeseek.com', host: 'www.nodeseek.com', contentType: 'text/plain;charset=UTF-8'},
   DF: {origin: 'https://www.deepflood.com', host: 'www.deepflood.com', contentType: 'application/json'},
@@ -142,13 +142,14 @@ async function signOne(ctx, account) {
 async function main(ctx) {
   if (ctx.request && String((ctx.env || {}).MODE || '').toLowerCase() !== 'checkin') return capture(ctx);
   const results = [];
-  const active = ACCOUNTS.filter(account => enabled((ctx.env || {})['ENABLE_' + account.id]));
-  console.log(`[论坛签到 v${VERSION}] 已启用：${active.map(a => a.label).join('、') || '无'}。`);
-  for (const account of active) {
+  // Egern may persist false for optional UI switches even when default_value says true.
+  // Do not consult the legacy ENABLE_* values; possession of a saved cookie selects the account.
+  console.log(`[论坛签到 v${VERSION}] 自动读取四份本地 Cookie，逐个处理账号。`);
+  for (const account of ACCOUNTS) {
     try { results.push(await signOne(ctx, account)); }
     catch (_) { results.push(`${account.label}：本地存储读取失败`); }
   }
-  await notify(ctx, '签到结果', results.length ? results.join('\n') : '所有账号均已停用');
+  await notify(ctx, '签到结果', results.join('\n'));
 }
 
 export default main;
