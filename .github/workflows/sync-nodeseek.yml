@@ -1,0 +1,44 @@
+name: Sync NodeSeek dual-account modules
+
+on:
+  schedule:
+    - cron: '37 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-nodeseek.yml'
+      - '.github/scripts/sync-nodeseek.py'
+      - '.github/scripts/test-nodeseek.cjs'
+
+permissions:
+  contents: write
+
+# Share the lock with the existing IBL3ND module/JS synchronization workflow.
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sync upstream and generate isolated account modules
+        run: python3 .github/scripts/sync-nodeseek.py
+      - name: Verify account isolation without real cookies or network requests
+        run: node .github/scripts/test-nodeseek.cjs
+      - name: Commit changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add NodeSeek.module NodeSeek2.module Scripts/NodeSeek.js Scripts/NodeSeek2.js
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync NodeSeek and regenerate dual-account modules"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
