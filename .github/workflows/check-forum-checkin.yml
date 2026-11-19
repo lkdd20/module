@@ -1,0 +1,21 @@
+name: Validate unified NS and DF check-in
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ForumCheckin.module'
+      - 'Scripts/ForumCheckin.js'
+      - '.github/scripts/test-forum-checkin.cjs'
+      - '.github/workflows/check-forum-checkin.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check four-account behavior without network or real credentials
+        run: node .github/scripts/test-forum-checkin.cjs
+      - name: Check existing NodeSeek modules
+        run: node .github/scripts/test-nodeseek.cjs

@@ -1,0 +1,76 @@
+name: "NS + DF 双账号签到"
+description: "一个模块管理 NodeSeek 两账号和 DeepFlood 两账号；Cookie 仅保存在 Egern 本机"
+icon: "person.2.fill"
+compat_arguments:
+  MINUTE: "15"
+  HOUR: "10"
+  CAPTURE_TARGET: "关闭"
+  FIXED_LEGS: "false"
+  ENABLE_NS1: "true"
+  ENABLE_NS2: "true"
+  ENABLE_DF1: "true"
+  ENABLE_DF2: "true"
+compat_arguments_desc: |
+  MINUTE/HOUR：每日签到时间，默认 10:15（设备本地时间）
+  CAPTURE_TARGET：只捕获所选账号，获取成功后切回“关闭”
+  FIXED_LEGS：false 随机鸡腿 / true 固定鸡腿
+  ENABLE_NS1/NS2/DF1/DF2：分别启用对应签到账号
+env_schema:
+  CAPTURE_TARGET:
+    name: Cookie 捕获账号
+    description: 登录所选账号并刷新自己的个人页，获取成功后切回“关闭”
+    default_value: "关闭"
+    options: ["关闭", "NS账号1", "NS账号2", "DF账号1", "DF账号2"]
+  FIXED_LEGS:
+    name: 固定鸡腿（关闭为随机）
+    default_value: "false"
+    options: ["false", "true"]
+  ENABLE_NS1:
+    name: 启用 NS 账号1
+    default_value: "true"
+    options: ["true", "false"]
+  ENABLE_NS2:
+    name: 启用 NS 账号2
+    default_value: "true"
+    options: ["true", "false"]
+  ENABLE_DF1:
+    name: 启用 DF 账号1
+    default_value: "true"
+    options: ["true", "false"]
+  ENABLE_DF2:
+    name: 启用 DF 账号2
+    default_value: "true"
+    options: ["true", "false"]
+mitm:
+  hostnames:
+    - www.nodeseek.com
+    - www.deepflood.com
+scriptings:
+  - http_response:
+      name: 论坛合并签到－NS Cookie
+      match: '^https://www\.nodeseek\.com/api/account/getInfo(?:/|\?|$)'
+      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js
+      body_required: false
+      timeout: 30
+      env:
+        CAPTURE_TARGET: "{{{CAPTURE_TARGET}}}"
+  - http_response:
+      name: 论坛合并签到－DF Cookie
+      match: '^https://www\.deepflood\.com/api/account/getInfo(?:/|\?|$)'
+      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js
+      body_required: false
+      timeout: 30
+      env:
+        CAPTURE_TARGET: "{{{CAPTURE_TARGET}}}"
+  - schedule:
+      name: 论坛合并签到－四账号
+      cron: "{{{MINUTE}}} {{{HOUR}}} * * *"
+      timeout: 90
+      script_url: https://raw.githubusercontent.com/lkdd20/module/main/Scripts/ForumCheckin.js
+      env:
+        MODE: checkin
+        FIXED_LEGS: "{{{FIXED_LEGS}}}"
+        ENABLE_NS1: "{{{ENABLE_NS1}}}"
+        ENABLE_NS2: "{{{ENABLE_NS2}}}"
+        ENABLE_DF1: "{{{ENABLE_DF1}}}"
+        ENABLE_DF2: "{{{ENABLE_DF2}}}"
