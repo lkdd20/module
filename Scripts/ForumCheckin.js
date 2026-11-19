@@ -3,6 +3,7 @@
  * DeepFlood endpoint reference: https://github.com/agluo/ql-script-hub/blob/master/deepflood_checkin.py
  * Credentials stay in Egern local storage; no password, cookie, or token is uploaded.
  */
+const VERSION = '1.0.1';
 const SITES = {
   NS: {origin: 'https://www.nodeseek.com', host: 'www.nodeseek.com', contentType: 'text/plain;charset=UTF-8'},
   DF: {origin: 'https://www.deepflood.com', host: 'www.deepflood.com', contentType: 'application/json'},
@@ -24,7 +25,11 @@ function header(headers, name) {
 
 function enabled(value, fallback = true) {
   if (value == null || String(value).trim() === '') return fallback;
-  return ['true', '1', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+  const normalized = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  // Unexpanded {{{NAME}}}, null/undefined text, and other unknown values are not explicit opt-outs.
+  return fallback;
 }
 
 async function notify(ctx, subtitle, body) {
@@ -137,8 +142,9 @@ async function signOne(ctx, account) {
 async function main(ctx) {
   if (ctx.request && String((ctx.env || {}).MODE || '').toLowerCase() !== 'checkin') return capture(ctx);
   const results = [];
-  for (const account of ACCOUNTS) {
-    if (!enabled((ctx.env || {})['ENABLE_' + account.id])) continue;
+  const active = ACCOUNTS.filter(account => enabled((ctx.env || {})['ENABLE_' + account.id]));
+  console.log(`[论坛签到 v${VERSION}] 已启用：${active.map(a => a.label).join('、') || '无'}。`);
+  for (const account of active) {
     try { results.push(await signOne(ctx, account)); }
     catch (_) { results.push(`${account.label}：本地存储读取失败`); }
   }

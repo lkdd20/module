@@ -55,6 +55,17 @@ async function sign(env = {}, responder = () => ({status: 200, text: async () =>
   assert(requests.every(r => r.url.endsWith('random=true')));
   assert(requests.every(r => r.options.redirect === 'manual' && r.options.credentials === 'omit'));
   assert.equal((summary.match(/签到成功/g) || []).length, 4);
+  // Older Egern/manual execution can pass unexpanded template strings as env values.
+  summary = await sign({
+    ENABLE_NS1: '{{{ENABLE_NS1}}}', ENABLE_NS2: '{{{ENABLE_NS2}}}',
+    ENABLE_DF1: '{{{ENABLE_DF1}}}', ENABLE_DF2: '{{{ENABLE_DF2}}}',
+  });
+  assert.equal(requests.length, 4, 'unexpanded defaults must not disable all accounts');
+  summary = await sign({ENABLE_NS1: 'null', ENABLE_NS2: 'undefined', ENABLE_DF1: '  ', ENABLE_DF2: null});
+  assert.equal(requests.length, 4, 'missing or unrecognized defaults remain enabled');
+  summary = await sign({ENABLE_NS1: false, ENABLE_NS2: 'false', ENABLE_DF1: '0', ENABLE_DF2: 'off'});
+  assert.equal(requests.length, 0, 'explicit off settings must still be honored');
+  assert(summary.includes('所有账号均已停用'));
   await sign({FIXED_LEGS: 'true', ENABLE_NS2: 'false', ENABLE_DF2: 'false'});
   assert.equal(requests.length, 2);
   assert(requests.every(r => r.url.endsWith('random=false')));
