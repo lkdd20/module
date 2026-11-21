@@ -1,0 +1,69 @@
+# Egern Sogou Input privacy blocking module (extended)
+# Checked: 2026-11-22
+# Base: https://ruleset.skk.moe/List/non_ip/sogouinput.conf (SukkaW, AGPL-3.0)
+# Additional domain leads: https://gist.github.com/groundcat/e1811a1e300061dab6f914d13021acd5 (groundcat, MIT)
+# Base source has 15 entries: 8 domain suffix, 2 exact domain (one canary),
+# 2 user agents, 3 process-name. Canary and unsupported process-name omitted.
+# 6 domain suffixes below supplement older GitHub host lists and are unverified for current iOS versions.
+# This module is network-only; it does not stop local processing, hardcoded-IP traffic, or all exfiltration.
+# Shared-domain caution: beacon.qq.com may also be used by other Tencent apps.
+name: "搜狗输入法隐私拦截（增强版）"
+description: "阻断 SukkaW 规则及旧版 GitHub 补充域名。严格模式可能影响搜狗同步、云输入及其他搜狗/腾讯功能。"
+author: "SukkaW; groundcat (supplement); Egern YAML adaptation"
+homepage: "https://github.com/SukkaW/Surge"
+rules:
+  # SukkaW source: 8 suffix domains
+  - domain_suffix:
+      match: beacon.qq.com
+      policy: REJECT
+  - domain_suffix:
+      match: get.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: ime.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: sginput.qq.com
+      policy: REJECT
+  - domain_suffix:
+      match: macime.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: pinyin.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: shouji.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: account.sogou.com
+      policy: REJECT
+  # SukkaW source: 1 exact domain
+  - domain:
+      match: oth.str.mdt.qq.com
+      policy: REJECT
+  # SukkaW source: 2 user agents; effective only where Egern can observe HTTP headers
+  - user_agent:
+      match: "*SogouInput*"
+      policy: REJECT
+  - user_agent:
+      match: "*com.sogou.sogouinput.BaseKeyboard*"
+      policy: REJECT
+  # groundcat historical supplementary domains (not verified on 2026 iOS)
+  - domain_suffix:
+      match: proxy.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: tb.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: p3p.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: ie.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: wap.sogou.com
+      policy: REJECT
+  - domain_suffix:
+      match: push.sogou.com
+      policy: REJECT
